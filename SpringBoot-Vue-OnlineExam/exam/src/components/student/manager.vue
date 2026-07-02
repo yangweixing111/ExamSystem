@@ -70,9 +70,13 @@
             }).then(res => {
               if(res.data != null ) { //修改成功提示
                 this.$message({
-                  message: '密码修改成功...',
+                  message: '密码修改成功，即将跳转到登录页面...',
                   type: 'success'
                 })
+
+                setTimeout(() => {
+                  this.$router.push('/login')
+                }, 1500)
               }
             })
           } else {

@@ -17,8 +17,8 @@ public class ExamManageServiceImpl implements ExamManageService {
 
 
     @Override
-    public List<ExamManage> findAll() {
-        return examManageMapper.findAll();
+    public List<ExamManage> findAllList() {
+        return examManageMapper.findAllList();
     }
 
     @Override
@@ -49,5 +49,10 @@ public class ExamManageServiceImpl implements ExamManageService {
     @Override
     public ExamManage findOnlyPaperId() {
         return examManageMapper.findOnlyPaperId();
+    }
+
+    @Override
+    public int updateTotalScoreByPaperId(Integer paperId, Integer totalScore) {
+        return examManageMapper.updateTotalScoreByPaperId(paperId, totalScore);
     }
 }

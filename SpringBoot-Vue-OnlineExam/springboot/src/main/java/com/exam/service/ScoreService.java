@@ -9,11 +9,17 @@ import java.util.List;
 public interface ScoreService {
     int add(Score score);
 
-    List<Score> findAll();
+    IPage<Score> findAll(Page page);
+
+    List<Score> findAllList();
 
     IPage<Score> findById(Page page, Integer studentId);
 
     List<Score> findById(Integer studentId);
 
     List<Score> findByExamCode(Integer examCode);
+
+    int getExamCount(Integer examCode, Integer studentId);
+
+    int getMaxScore(Integer examCode, Integer studentId);
 }

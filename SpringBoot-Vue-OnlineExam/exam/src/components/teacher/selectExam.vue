@@ -12,10 +12,49 @@
       <el-table-column prop="totalScore" label="总分" width="120"></el-table-column>
       <el-table-column prop="type" label="试卷类型" width="120"></el-table-column>
       <el-table-column prop="tips" label="考生提示" width="400"></el-table-column>
-      <el-table-column fixed="right" label="操作" width="150">
+      <el-table-column fixed="right" label="操作" width="280" align="center">
         <template slot-scope="scope">
-          <el-button @click="edit(scope.row.examCode)" type="primary" size="small">编辑</el-button>
-          <el-button @click="deleteRecord(scope.row.examCode)" type="danger" size="small">删除</el-button>
+          <div class="action-buttons">
+            <el-tooltip content="查看试卷题目" placement="top">
+              <el-button
+                @click="viewQuestions(scope.row.paperId, scope.row.source)"
+                type="info"
+                size="mini"
+                icon="el-icon-view"
+                circle>
+              </el-button>
+            </el-tooltip>
+
+            <el-tooltip content="智能组卷" placement="top">
+              <el-button
+                @click="autoGenerate(scope.row.paperId, scope.row.source)"
+                type="success"
+                size="mini"
+                icon="el-icon-magic-stick"
+                circle>
+              </el-button>
+            </el-tooltip>
+
+            <el-tooltip content="编辑考试信息" placement="top">
+              <el-button
+                @click="edit(scope.row.examCode)"
+                type="primary"
+                size="mini"
+                icon="el-icon-edit"
+                circle>
+              </el-button>
+            </el-tooltip>
+
+            <el-tooltip content="删除考试" placement="top">
+              <el-button
+                @click="deleteRecord(scope.row.examCode)"
+                type="danger"
+                size="mini"
+                icon="el-icon-delete"
+                circle>
+              </el-button>
+            </el-tooltip>
+          </div>
         </template>
       </el-table-column>
     </el-table>
@@ -95,6 +134,12 @@ export default {
     this.getExamInfo()
   },
   methods: {
+    viewQuestions(paperId, source) {
+      this.$router.push({path: '/viewQuestions', query: {paperId: paperId, subject: source}})
+    },
+    autoGenerate(paperId, source) {
+      this.$router.push({path: '/autoGenerate', query: {paperId: paperId, subject: source}})
+    },
     edit(examCode) { //编辑试卷
       this.dialogVisible = true
       this.$axios(`/api/exam/${examCode}`).then(res => { //根据试卷id请求后台
@@ -165,14 +210,32 @@ export default {
 <style lang="less" scoped>
 .exam {
   padding: 0px 40px;
+
+  .action-buttons {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+
+    .el-button {
+      transition: all 0.3s ease;
+
+      &:hover {
+        transform: scale(1.15);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+      }
+
+      &:active {
+        transform: scale(0.95);
+      }
+    }
+  }
+
   .page {
     margin-top: 20px;
     display: flex;
     justify-content: center;
     align-items: center;
-  }
-  .edit{
-    margin-left: 20px;
   }
 }
 </style>

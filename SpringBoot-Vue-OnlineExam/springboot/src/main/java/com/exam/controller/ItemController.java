@@ -2,6 +2,7 @@ package com.exam.controller;
 
 import com.exam.entity.ApiResult;
 import com.exam.entity.PaperManage;
+import com.exam.service.ExamManageService;
 import com.exam.service.PaperService;
 import com.exam.serviceimpl.FillQuestionServiceImpl;
 import com.exam.serviceimpl.JudgeQuestionServiceImpl;
@@ -30,6 +31,9 @@ public class ItemController {
     @Autowired
     PaperService paperService;
 
+    @Autowired
+    ExamManageService examManageService;
+
 
 
     @PostMapping("/item")
@@ -43,40 +47,69 @@ public class ItemController {
         //出卷id
         Integer paperId = item.getPaperId();
 
+        int totalScore = 0;
+
         // 选择题数据库获取
-        List<Integer>  changeNumbers = multiQuestionService.findBySubject(item.getSubject(), changeNumber);
-        if(changeNumbers==null){
-            return ApiResultHandler.buildApiResult(400,"选择题数据库获取失败",null);
-        }
-        for (Integer number : changeNumbers) {
-            PaperManage paperManage = new PaperManage(paperId,1,number);
-            int index = paperService.add(paperManage);
-            if(index==0)
-                return ApiResultHandler.buildApiResult(400,"选择题组卷保存失败",null);
+        if (changeNumber != null && changeNumber > 0) {
+            List<Integer> changeNumbers = multiQuestionService.findBySubject(item.getSubject(), changeNumber);
+            if (changeNumbers == null || changeNumbers.isEmpty()) {
+                return ApiResultHandler.buildApiResult(400, "选择题题库中该科目的题目数量不足", null);
+            }
+            for (Integer number : changeNumbers) {
+                PaperManage paperManage = new PaperManage(paperId, 1, number);
+                int index = paperService.add(paperManage);
+                if (index == 0)
+                    return ApiResultHandler.buildApiResult(400, "选择题组卷保存失败", null);
+            }
+            // 计算选择题总分
+            totalScore += changeNumbers.size() * 2;
         }
 
         // 填空题
-        List<Integer> fills = fillQuestionService.findBySubject(item.getSubject(), fillNumber);
-        if(fills==null)
-            return ApiResultHandler.buildApiResult(400,"填空题数据库获取失败",null);
-        for (Integer fillNum : fills) {
-            PaperManage paperManage = new PaperManage(paperId,2,fillNum);
-            int index = paperService.add(paperManage);
-            if(index==0)
-                return ApiResultHandler.buildApiResult(400,"填空题题组卷保存失败",null);
+        if (fillNumber != null && fillNumber > 0) {
+            List<Integer> fills = fillQuestionService.findBySubject(item.getSubject(), fillNumber);
+            if (fills == null || fills.isEmpty()) {
+                return ApiResultHandler.buildApiResult(400, "填空题题库中该科目的题目数量不足", null);
+            }
+            for (Integer fillNum : fills) {
+                PaperManage paperManage = new PaperManage(paperId, 2, fillNum);
+                int index = paperService.add(paperManage);
+                if (index == 0)
+                    return ApiResultHandler.buildApiResult(400, "填空题题组卷保存失败", null);
+            }
+            // 计算填空题总分
+            totalScore += fills.size() * 2;
         }
+
         // 判断题
-        List<Integer> judges = judgeQuestionService.findBySubject(item.getSubject(), judgeNumber);
-        if(fills==null)
-            return ApiResultHandler.buildApiResult(400,"判断题数据库获取失败",null);
-        for (Integer judge : judges) {
-            PaperManage paperManage = new PaperManage(paperId,3,judge);
-            int index = paperService.add(paperManage);
-            if(index==0)
-                return ApiResultHandler.buildApiResult(400,"判断题题组卷保存失败",null);
+        if (judgeNumber != null && judgeNumber > 0) {
+            List<Integer> judges = judgeQuestionService.findBySubject(item.getSubject(), judgeNumber);
+            if (judges == null || judges.isEmpty()) {
+                return ApiResultHandler.buildApiResult(400, "判断题题库中该科目的题目数量不足", null);
+            }
+            for (Integer judge : judges) {
+                PaperManage paperManage = new PaperManage(paperId, 3, judge);
+                int index = paperService.add(paperManage);
+                if (index == 0)
+                    return ApiResultHandler.buildApiResult(400, "判断题题组卷保存失败", null);
+            }
+            // 计算判断题总分
+            totalScore += judges.size() * 2;
         }
 
+        // 检查是否至少添加了一道题
+        if (totalScore == 0) {
+            return ApiResultHandler.buildApiResult(400, "请至少设置一种题型的数量大于0", null);
+        }
 
-          return ApiResultHandler.buildApiResult(200,"试卷组卷成功",null);
+        // 更新exam_manage表中的totalScore
+        try {
+            examManageService.updateTotalScoreByPaperId(paperId, totalScore);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ApiResultHandler.buildApiResult(400, "更新试卷总分失败", null);
+        }
+
+        return ApiResultHandler.buildApiResult(200, "试卷组卷成功,总分:" + totalScore, null);
     }
 }

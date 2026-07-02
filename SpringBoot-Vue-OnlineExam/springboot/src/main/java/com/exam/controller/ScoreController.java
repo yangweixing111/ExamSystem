@@ -19,7 +19,7 @@ public class ScoreController {
 
     @GetMapping("/scores")
     public ApiResult findAll() {
-        List<Score> res = scoreService.findAll();
+        List<Score> res = scoreService.findAllList();
         return ApiResultHandler.buildApiResult(200,"查询所有学生成绩",res);
     }
 //    分页

@@ -11,7 +11,7 @@ public interface ExamManageService {
     /**
      * 不分页查询所有考试信息
      */
-    List<ExamManage> findAll();
+    List<ExamManage> findAllList();
     IPage<ExamManage> findAll(Page<ExamManage> page);
 
     ExamManage findById(Integer examCode);
@@ -23,4 +23,9 @@ public interface ExamManageService {
     int add(ExamManage exammanage);
 
     ExamManage findOnlyPaperId();
+
+    /**
+     * 根据paperId更新试卷总分
+     */
+    int updateTotalScoreByPaperId(Integer paperId, Integer totalScore);
 }

@@ -24,7 +24,7 @@
           @size-change="handleSizeChange"
           @current-change="handleCurrentChange"
           :current-page="pagination.current"
-          :page-sizes="[6, 10, 20, 40]"
+          :page-sizes="[10, 20, 40, 60]"
           :page-size="pagination.size"
           layout="total, sizes, prev, pager, next, jumper"
           :total="pagination.total">
@@ -45,7 +45,7 @@ export default {
       pagination: { //分页后的考试信息
         current: 1, //当前页
         total: null, //记录条数
-        size: 6 //每页条数
+        size: 10 //每页条数
       }
     }
   },
@@ -54,7 +54,7 @@ export default {
     this.loading = true
   },
   // watch: {
-    
+
   // },
   methods: {
     //获取当前所有考试信息

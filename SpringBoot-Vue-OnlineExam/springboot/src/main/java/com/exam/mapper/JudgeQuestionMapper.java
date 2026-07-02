@@ -31,6 +31,6 @@ public interface JudgeQuestionMapper {
             "(#{subject},#{question},#{answer},#{analysis},#{level},#{section})")
     int add(JudgeQuestion judgeQuestion);
 
-    @Select("select questionId from judge_question  where subject=#{subject}  order by rand() desc limit #{pageNo}")
+    @Select("select questionId from judge_question where subject = #{subject} order by rand() limit #{pageNo}")
     List<Integer> findBySubject(String subject,Integer pageNo);
 }

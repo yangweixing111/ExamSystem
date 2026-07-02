@@ -9,10 +9,10 @@ import java.util.List;
 
 @Mapper
 public interface ExamManageMapper {
-    @Select("select * from exam_manage")
-    List<ExamManage> findAll();
+    @Select("select * from exam_manage order by examCode desc")
+    List<ExamManage> findAllList();
 
-    @Select("select * from exam_manage")
+    @Select("select * from exam_manage order by examCode desc")
     IPage<ExamManage> findAll(Page page);
 
     @Select("select * from exam_manage where examCode = #{examCode}")
@@ -38,4 +38,10 @@ public interface ExamManageMapper {
      */
     @Select("select paperId from exam_manage order by paperId desc limit 1")
     ExamManage findOnlyPaperId();
+
+    /**
+     * 根据paperId更新试卷总分
+     */
+    @Update("update exam_manage set totalScore = #{totalScore} where paperId = #{paperId}")
+    int updateTotalScoreByPaperId(@Param("paperId") Integer paperId, @Param("totalScore") Integer totalScore);
 }

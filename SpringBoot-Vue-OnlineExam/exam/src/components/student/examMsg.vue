@@ -21,7 +21,14 @@
         <li>更新于{{examData.examDate}}</li>
         <li>来自 {{examData.institute}}</li>
         <li class="btn">{{examData.type}}</li>
-        <li class="right"><el-button @click="toAnswer(examData.examCode)">开始答题</el-button></li>
+        <li class="right">
+          <el-button
+            @click="toAnswer(examData.examCode)"
+            :disabled="!canEnterExam"
+            :type="canEnterExam ? 'primary' : 'info'">
+            {{ buttonText }}
+          </el-button>
+        </li>
       </ul>
       <ul class="info">
         <li @click="dialogVisible = true"><a href="javascript:;"><i class="iconfont icon-info"></i>考生须知</a></li>
@@ -70,7 +77,7 @@
             </el-collapse-item>
           </el-collapse>
         </el-collapse-item>
-        
+
       </el-collapse>
     </div>
     <!--考生须知对话框-->
@@ -87,49 +94,140 @@
 </template>
 
 <script>
+import {mapState} from 'vuex'
 export default {
   data() {
     return {
-      dialogVisible: false, //对话框属性
-      activeName: '0',  //默认打开序号
-      topicCount: [],//每种类型题目的总数
-      score: [],  //每种类型分数的总数
-      examData: { //考试信息
-        // source: null,
-        // totalScore: null,
+      dialogVisible: false,
+      activeName: '0',
+      topicCount: [],
+      score: [],
+      examData: {
       },
-      topic: {  //试卷信息
-
+      topic: {
       },
+      examStatus: null,
+      examCount: 0,
+      maxAttempts: 3,
+      canEnterExam: false,
+      buttonText: '开始答题',
+      isPracticeMode: false
     }
   },
   mounted() {
     this.init()
   },
+  computed: {
+    ...mapState(['isPractice'])
+  },
   methods: {
-    //初始化页面数据
     init() {
-      let examCode = this.$route.query.examCode //获取路由传递过来的试卷编号
-      this.$axios(`/api/exam/${examCode}`).then(res => {  //通过examCode请求试卷详细信息
+      let examCode = this.$route.query.examCode
+      let studentId = this.$cookies.get("cid")
+
+      this.isPracticeMode = this.$store.state.isPractice
+
+      this.$axios(`/api/exam/${examCode}`).then(res => {
         res.data.data.examDate = res.data.data.examDate.substr(0,10)
         this.examData = { ...res.data.data}
         let paperId = this.examData.paperId
-        this.$axios(`/api/paper/${paperId}`).then(res => {  //通过paperId获取试题题目信息
-          this.topic = {...res.data}
-          let keys = Object.keys(this.topic) //对象转数组
-          keys.forEach(e => {
-            let data = this.topic[e]
-            this.topicCount.push(data.length)
-            let currentScore = 0
-            for(let i = 0; i< data.length; i++) { //循环每种题型,计算出总分
-              currentScore += data[i].score
-            }
-            this.score.push(currentScore) //把每种题型总分存入score
+        this.$axios(`/api/paper/${paperId}`).then(res => {
+          if (res.data.code === 200) {
+            const data = res.data.data
+            this.topic = {...data}
+
+            // 清空之前的数据
+            this.topicCount = []
+            this.score = []
+
+            let keys = Object.keys(this.topic)
+            keys.forEach(e => {
+              let questionList = this.topic[e]
+              this.topicCount.push(questionList.length)
+              let currentScore = 0
+              for(let i = 0; i< questionList.length; i++) {
+                currentScore += questionList[i].score
+              }
+              this.score.push(currentScore)
+            })
+          } else {
+            this.$message({
+              message: res.data.message || '获取题目失败',
+              type: 'error'
+            })
+          }
+        }).catch(err => {
+          console.error('请求题目接口失败:', err)
+          this.$message({
+            message: '获取题目失败，请检查网络连接',
+            type: 'error'
           })
         })
+      }).catch(err => {
+        console.error('请求考试信息接口失败:', err)
+        this.$message({
+          message: '获取考试信息失败',
+          type: 'error'
+        })
+      })
+
+      if (!this.isPracticeMode) {
+        this.checkExamStatus(examCode, studentId)
+      } else {
+        this.canEnterExam = true
+        this.buttonText = '开始练习'
+      }
+    },
+    checkExamStatus(examCode, studentId) {
+      this.$axios(`/api/exam/status/${examCode}/${studentId}`).then(res => {
+        if (res.data.code === 200) {
+          const data = res.data.data
+          this.examStatus = data.status
+          this.examCount = data.examCount
+          this.maxAttempts = data.maxAttempts
+          this.canEnterExam = data.canEnter
+
+          if (!this.canEnterExam) {
+            if (this.examStatus === 'notStarted') {
+              this.buttonText = '考试未开始'
+            } else if (this.examStatus === 'expired') {
+              this.buttonText = '考试已过期'
+            } else if (this.examCount >= this.maxAttempts) {
+              this.buttonText = '考试次数已用完'
+            }
+          } else {
+            this.buttonText = `开始答题（剩余${data.remainingAttempts}次机会）`
+          }
+        }
+      }).catch(err => {
+        console.log(err)
+        this.buttonText = '开始答题'
       })
     },
     toAnswer(id) {
+      if (!this.canEnterExam) {
+        if (this.examStatus === 'notStarted') {
+          this.$message({
+            showClose: true,
+            type: 'warning',
+            message: '考试还未开始，请在考试日期当天再来'
+          })
+        } else if (this.examStatus === 'expired') {
+          this.$message({
+            showClose: true,
+            type: 'warning',
+            message: '考试已过期，无法参加'
+          })
+        } else if (this.examCount >= this.maxAttempts) {
+          this.$message({
+            showClose: true,
+            type: 'warning',
+            message: '您的考试次数已用完（共3次机会）'
+          })
+        }
+        return
+      }
+
       this.$router.push({path:"/answer",query:{examCode: id}})
     },
   }
@@ -201,7 +299,7 @@ export default {
   padding: 5px 10px;
   border: 1px solid #88949b;
   border-radius: 4px;
-} 
+}
 .wrapper .bottom {
   display: flex;
   margin-left: 20px;

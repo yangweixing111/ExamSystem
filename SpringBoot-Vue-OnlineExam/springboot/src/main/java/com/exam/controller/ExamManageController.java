@@ -9,6 +9,8 @@ import com.exam.util.ApiResultHandler;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 public class ExamManageController {
 
@@ -18,8 +20,9 @@ public class ExamManageController {
     @GetMapping("/exams")
     public ApiResult findAll(){
         System.out.println("不分页查询所有试卷");
+        List<ExamManage> allExams = examManageService.findAllList();
         ApiResult apiResult;
-        apiResult = ApiResultHandler.buildApiResult(200, "请求成功！", examManageService.findAll());
+        apiResult = ApiResultHandler.buildApiResult(200, "请求成功！", allExams);
         return apiResult;
     }
 

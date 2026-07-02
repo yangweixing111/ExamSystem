@@ -21,13 +21,18 @@ public class ScoreServiceImpl implements ScoreService {
     }
 
     @Override
-    public List<Score> findAll() {
-        return scoreMapper.findAll();
+    public IPage<Score> findAll(Page page) {
+        return scoreMapper.findAll(page);
+    }
+
+    @Override
+    public List<Score> findAllList() {
+        return scoreMapper.findAll(new Page<>(1, Integer.MAX_VALUE)).getRecords();
     }
 
     @Override
     public IPage<Score> findById(Page page, Integer studentId) {
-        return scoreMapper.findById(page, studentId);
+        return scoreMapper.findByIdWithPage(page, studentId);
     }
 
     @Override
@@ -38,5 +43,15 @@ public class ScoreServiceImpl implements ScoreService {
     @Override
     public List<Score> findByExamCode(Integer examCode) {
         return scoreMapper.findByExamCode(examCode);
+    }
+
+    @Override
+    public int getExamCount(Integer examCode, Integer studentId) {
+        return scoreMapper.getExamCount(examCode, studentId);
+    }
+
+    @Override
+    public int getMaxScore(Integer examCode, Integer studentId) {
+        return scoreMapper.getMaxScore(examCode, studentId);
     }
 }
