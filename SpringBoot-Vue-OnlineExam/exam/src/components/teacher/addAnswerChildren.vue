@@ -363,19 +363,6 @@ export default {
           })
           this.postChange = {}
         }
-      }).then(() => {
-        this.$axios(`/api/multiQuestionId`).then(res => { //获取当前题目的questionId
-          let questionId = res.data.data.questionId
-          this.postPaper.questionId = questionId
-          this.postPaper.questionType = 1
-          this.$axios({
-            url: '/api/paperManage',
-            method: 'Post',
-            data: {
-              ...this.postPaper
-            }
-          })
-        })
       })
     },
     fillSubmit() { //填空题提交
@@ -395,19 +382,6 @@ export default {
           })
           this.postFill = {}
         }
-      }).then(() => {
-        this.$axios(`/api/fillQuestionId`).then(res => { //获取当前题目的questionId
-          let questionId = res.data.data.questionId
-          this.postPaper.questionId = questionId
-          this.postPaper.questionType = 2
-          this.$axios({
-            url: '/api/paperManage',
-            method: 'Post',
-            data: {
-              ...this.postPaper
-            }
-          })
-        })
       })
     },
     judgeSubmit() { //判断题提交
@@ -427,19 +401,6 @@ export default {
           })
           this.postJudge = {}
         }
-      }).then(() => {
-        this.$axios(`/api/judgeQuestionId`).then(res => { //获取当前题目的questionId
-          let questionId = res.data.data.questionId
-          this.postPaper.questionId = questionId
-          this.postPaper.questionType = 3
-          this.$axios({
-            url: '/api/paperManage',
-            method: 'Post',
-            data: {
-              ...this.postPaper
-            }
-          })
-        })
       })
     }
   },
@@ -552,5 +513,4 @@ export default {
     }
   }
 }
-
-
+</style>

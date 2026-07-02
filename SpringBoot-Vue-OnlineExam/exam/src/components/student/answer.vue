@@ -43,7 +43,7 @@
                 <p>选择题部分</p>
                 <ul>
                   <li v-for="(list, index1) in topic[1]" :key="index1">
-                    <a href="javascript:;" 
+                    <a href="javascript:;"
                       @click="change(index1)"
                       :class="{'border': index == index1 && currentType == 1,'bg': bg_flag && topic[1][index1].isClick == true}">
                       <span :class="{'mark': topic[1][index1].isMark == true}"></span>
@@ -71,7 +71,7 @@
               <div class="final" @click="commit()">结束考试</div>
             </div>
           </div>
-        </transition>  
+        </transition>
         <!--右边选择答题区-->
         <transition name="slider-fade">
         <div class="right">
@@ -136,7 +136,7 @@
           </div>
         </div>
         </transition>
-     </div> 
+     </div>
   </div>
 </template>
 
@@ -202,42 +202,78 @@ export default {
       this.userInfo.id = this.$cookies.get("cid")
     },
     calcuScore() { //计算答题分数
-      
+
     },
     getExamData() { //获取当前试卷所有信息
       let date = new Date()
       this.startTime = this.getTime(date)
       let examCode = this.$route.query.examCode //获取路由传递过来的试卷编号
       this.$axios(`/api/exam/${examCode}`).then(res => {  //通过examCode请求试卷详细信息
-        this.examData = { ...res.data.data} //获取考试详情
-        this.index = 0
-        this.time = this.examData.totalScore //获取分钟数
-        let paperId = this.examData.paperId
-        this.$axios(`/api/paper/${paperId}`).then(res => {  //通过paperId获取试题题目信息
-          this.topic = {...res.data}
-          let reduceAnswer = this.topic[1][this.index]
-          this.reduceAnswer = reduceAnswer
-          let keys = Object.keys(this.topic) //对象转数组
-          keys.forEach(e => {
-            let data = this.topic[e]
-            this.topicCount.push(data.length)
-            let currentScore = 0
-            for(let i = 0; i< data.length; i++) { //循环每种题型,计算出总分
-              currentScore += data[i].score
+        if (res.data.code === 200) {
+          this.examData = { ...res.data.data} //获取考试详情
+          this.index = 0
+          this.time = this.examData.totalTime //获取分钟数
+          let paperId = this.examData.paperId
+          this.$axios(`/api/paper/${paperId}`).then(res => {  //通过paperId获取试题题目信息
+            if (res.data.code === 200) {
+              this.topic = {...res.data.data}
+
+              if (!this.topic[1] || this.topic[1].length === 0) {
+                this.$message({
+                  message: '该试卷暂无选择题',
+                  type: 'warning'
+                })
+              }
+
+              let reduceAnswer = this.topic[1] && this.topic[1][this.index] ? this.topic[1][this.index] : {}
+              this.reduceAnswer = reduceAnswer
+              let keys = Object.keys(this.topic) //对象转数组
+              keys.forEach(e => {
+                let data = this.topic[e]
+                this.topicCount.push(data.length)
+                let currentScore = 0
+                for(let i = 0; i< data.length; i++) { //循环每种题型,计算出总分
+                  currentScore += data[i].score
+                }
+                this.score.push(currentScore) //把每种题型总分存入score
+              })
+              let len = this.topicCount[1] || 0
+              let father = []
+              for(let i = 0; i < len; i++) { //根据填空题数量创建二维空数组存放每道题答案
+                let children = [null,null,null,null]
+                father.push(children)
+              }
+              this.fillAnswer = father
+              let dataInit = this.topic[1]
+              if (dataInit && dataInit.length > 0) {
+                this.number = 1
+                this.showQuestion = dataInit[0].question
+                this.showAnswer = dataInit[0]
+              }
+            } else {
+              this.$message({
+                message: res.data.message || '获取题目失败',
+                type: 'error'
+              })
             }
-            this.score.push(currentScore) //把每种题型总分存入score
+          }).catch(err => {
+            console.error('获取题目失败:', err)
+            this.$message({
+              message: '获取题目失败，请检查网络连接',
+              type: 'error'
+            })
           })
-          let len = this.topicCount[1]
-          let father = []
-          for(let i = 0; i < len; i++) { //根据填空题数量创建二维空数组存放每道题答案
-            let children = [null,null,null,null]
-            father.push(children)
-          }
-          this.fillAnswer = father
-          let dataInit = this.topic[1]
-          this.number = 1
-          this.showQuestion = dataInit[0].question
-          this.showAnswer = dataInit[0]
+        } else {
+          this.$message({
+            message: res.data.message || '获取考试信息失败',
+            type: 'error'
+          })
+        }
+      }).catch(err => {
+        console.error('获取考试信息失败:', err)
+        this.$message({
+          message: '获取考试信息失败，请检查后端是否启动',
+          type: 'error'
         })
       })
     },
@@ -288,7 +324,7 @@ export default {
           let part= this.showQuestion.split("()").length -1 //根据题目中括号的数量确定填空横线数量
           this.part = part
           this.number = this.topicCount[0] + index + 1
-        } 
+        }
       }else if(index >= len) {
         this.index = 0
         this.judge(this.index)
@@ -324,7 +360,7 @@ export default {
         data[this.index]["isClick"] = true
       }
       /* 保存学生答题选项 */
-      this.topic1Answer[this.index] = val 
+      this.topic1Answer[this.index] = val
     },
     getJudgeLabel(val) {  //获取判断题作答选项
       this.judgeAnswer[this.index] = val
@@ -337,10 +373,10 @@ export default {
     previous() { //上一题
       this.index --
       switch(this.currentType) {
-        case 1: 
+        case 1:
           this.change(this.index)
           break
-        case 2: 
+        case 2:
           this.fill(this.index)
           break
         case 3:
@@ -351,10 +387,10 @@ export default {
     next() { //下一题
       this.index ++
       switch(this.currentType) {
-        case 1: 
+        case 1:
           this.change(this.index)
           break
-        case 2: 
+        case 2:
           this.fill(this.index)
           break
         case 3:
@@ -453,11 +489,11 @@ export default {
           }).then(res => {
             if(res.data.code == 200) {
               this.$router.push({path:'/studentScore',query: {
-                score: finalScore, 
+                score: finalScore,
                 startTime: this.startTime,
                 endTime: this.endTime
               }})
-            }  
+            }
           })
         }).catch(() => {
           console.log("继续答题")
@@ -592,7 +628,7 @@ export default {
 }
 .content .topic {
   padding: 20px 0px;
-  padding-top: 30px; 
+  padding-top: 30px;
 }
 .right .content {
   background-color: #fff;
@@ -678,7 +714,7 @@ export default {
   justify-content: space-around;
   flex-wrap: wrap;
 }
-.l-bottom .item ul li a { 
+.l-bottom .item ul li a {
   position: relative;
   justify-content: center;
   display: inline-flex;
